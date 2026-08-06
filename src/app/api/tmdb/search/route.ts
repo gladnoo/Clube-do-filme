@@ -1,0 +1,22 @@
+import { NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { searchMovies } from "@/lib/tmdb";
+
+export async function GET(req: Request) {
+  const session = await getServerSession(authOptions);
+  if (!session) return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
+
+  const { searchParams } = new URL(req.url);
+  const q = searchParams.get("q");
+  if (!q || q.trim().length < 2) {
+    return NextResponse.json({ results: [] });
+  }
+
+  try {
+    const results = await searchMovies(q.trim());
+    return NextResponse.json({ results });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
+  }
+}

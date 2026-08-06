@@ -1,0 +1,75 @@
+// Banco de dados do Clube do Filme.
+// Em desenvolvimento usamos SQLite (arquivo local, zero configuração).
+// Para produção (Vercel, etc.), troque o "provider" para "postgresql"
+// e aponte DATABASE_URL para um banco Postgres (Neon, Supabase, Railway...).
+// Veja o README para o passo a passo.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  displayName  String
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  reviews     Review[]
+  moviesAdded Movie[]  @relation("AddedBy")
+}
+
+model Movie {
+  id         String   @id @default(cuid())
+  title      String
+  year       Int?
+  director   String?
+  poster     String?
+  synopsis   String?
+  tmdbId     Int?     @unique
+  weekLabel  String?
+  isCurrent  Boolean  @default(false)
+  inQueue    Boolean  @default(false)
+  createdAt  DateTime @default(now())
+
+  addedById String?
+  addedBy   User?   @relation("AddedBy", fields: [addedById], references: [id])
+
+  cast    CastMember[]
+  reviews Review[]
+}
+
+model CastMember {
+  id        String @id @default(cuid())
+  actor     String
+  character String
+  movieId   String
+  movie     Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+}
+
+model Review {
+  id                String   @id @default(cuid())
+  rating            Float
+  highs             String?
+  lows              String?
+  favoriteCharacter String?
+  favoriteActor     String?
+  favoriteScene     String?
+  quote             String?
+  comment           String?
+  wouldRewatch      Boolean?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  movieId String
+  movie   Movie  @relation(fields: [movieId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, movieId])
+}
